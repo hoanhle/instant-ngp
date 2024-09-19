@@ -361,30 +361,30 @@ NerfDataset load_nerf(const std::vector<fs::path>& jsonpaths, float sharpen_amou
 			frames.get_ptr<nlohmann::json::array_t*>()->resize(cull_idx);
 		}
 
-		if (frames[0].contains("sharpness")) {
-			auto frames_copy = frames;
-			frames.clear();
-
-			// Kill blurrier frames than their neighbors
-			const int neighborhood_size = 3;
-			for (int i = 0; i < (int)frames_copy.size(); ++i) {
-				float mean_sharpness = 0.0f;
-				int mean_start = std::max(0, i-neighborhood_size);
-				int mean_end = std::min(i + neighborhood_size, (int)frames_copy.size() - 1);
-				for (int j = mean_start; j < mean_end; ++j) {
-					mean_sharpness += float(frames_copy[j].value("sharpness", 1.0));
-				}
-
-				mean_sharpness /= (mean_end - mean_start);
-
-				if (resolve_path(base_path, frames_copy[i]["file_path"]).exists() && frames_copy[i].value("sharpness", 1.0) > sharpness_discard_threshold * mean_sharpness) {
-					frames.emplace_back(frames_copy[i]);
-				} else {
-					// tlog::info() << "discarding frame " << frames_copy[i]["file_path"];
-					// fs::remove(resolve_path(base_path, frames_copy[i]["file_path"]));
-				}
-			}
-		}
+		// if (frames[0].contains("sharpness")) {
+		// 	auto frames_copy = frames;
+		// 	frames.clear();
+		//
+		// 	// Kill blurrier frames than their neighbors
+		// 	const int neighborhood_size = 3;
+		// 	for (int i = 0; i < (int)frames_copy.size(); ++i) {
+		// 		float mean_sharpness = 0.0f;
+		// 		int mean_start = std::max(0, i-neighborhood_size);
+		// 		int mean_end = std::min(i + neighborhood_size, (int)frames_copy.size() - 1);
+		// 		for (int j = mean_start; j < mean_end; ++j) {
+		// 			mean_sharpness += float(frames_copy[j].value("sharpness", 1.0));
+		// 		}
+		//
+		// 		mean_sharpness /= (mean_end - mean_start);
+		//
+		// 		if (resolve_path(base_path, frames_copy[i]["file_path"]).exists() && frames_copy[i].value("sharpness", 1.0) > sharpness_discard_threshold * mean_sharpness) {
+		// 			frames.emplace_back(frames_copy[i]);
+		// 		} else {
+		// 			// tlog::info() << "discarding frame " << frames_copy[i]["file_path"];
+		// 			// fs::remove(resolve_path(base_path, frames_copy[i]["file_path"]));
+		// 		}
+		// 	}
+		// }
 
 		for (size_t i = 0; i < frames.size(); ++i) {
 			result.paths.emplace_back(frames[i]["file_path"]);
