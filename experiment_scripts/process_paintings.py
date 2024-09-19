@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+import os
 
 def process_paintings(jpg_directory, script_path):
     # Define the path to the JPG directory
@@ -30,6 +31,10 @@ def process_paintings(jpg_directory, script_path):
             "--colmap_db", str(colmap_db_path),
             "--out", str(transforms_json_path)  # Output to transforms.json in the painting directory
         ]
+
+        # Suppress warnings by setting the PYTHONWARNINGS environment variable to 'ignore'
+        env = os.environ.copy()
+        env["PYTHONWARNINGS"] = "ignore"
 
         # Print and run the command
         print(f"Running command: {' '.join(command)}")
