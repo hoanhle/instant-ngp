@@ -8,11 +8,19 @@
 
 cmake_minimum_required(VERSION 3.18)
 
+
+# Specify CUDA architectures to cover a broad range of GPUs
+set(CMAKE_CUDA_ARCHITECTURES "50;60;61;70;75;80")
+
+# Optionally, specify CUDA standard version
+set(CMAKE_CUDA_STANDARD 14)
+
 project(instant-ngp
 	VERSION 1.0
 	DESCRIPTION "Instant Neural Graphics Primitives"
 	LANGUAGES C CXX CUDA
 )
+
 set(NGP_VERSION "${CMAKE_PROJECT_VERSION}")
 
 if (NOT NGP_DEPLOY)
