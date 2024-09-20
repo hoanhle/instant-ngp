@@ -44,6 +44,7 @@ def parse_args():
 	parser.add_argument("--screenshot_transforms", default="", help="Path to a nerf style transforms.json from which to save screenshots.")
 	parser.add_argument("--screenshot_frames", nargs="*", help="Which frame(s) to take screenshots of.")
 	parser.add_argument("--screenshot_dir", default="", help="Which directory to output screenshots to.")
+	parser.add_argument("--output_dir", default="", help="Directory to output rendered test images.")
 	parser.add_argument("--screenshot_spp", type=int, default=16, help="Number of samples per pixel in screenshots.")
 
 	parser.add_argument("--video_camera_path", default="", help="The camera path to render, e.g., base_cam.json.")
@@ -241,13 +242,9 @@ if __name__ == "__main__":
 				testbed.render_ground_truth = False
 				image = testbed.render(resolution[0], resolution[1], spp, True)
 
-				if i == 0:
-					write_image(f"ref.png", ref_image)
-					write_image(f"out.png", image)
-
-					diffimg = np.absolute(image - ref_image)
-					diffimg[...,3:4] = 1.0
-					write_image("diff.png", diffimg)
+				ref_image_path = os.path.join(args.output_dir, "ref.png")
+				out_image_path = os.path.join(args.output_dir, "out.png")
+				diff_image_path = os.path.join(args.output_dir, "diff.png")
 
 				A = np.clip(linear_to_srgb(image[...,:3]), 0.0, 1.0)
 				R = np.clip(linear_to_srgb(ref_image[...,:3]), 0.0, 1.0)
