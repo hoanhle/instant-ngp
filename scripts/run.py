@@ -181,28 +181,29 @@ if __name__ == "__main__":
 
 	tqdm_last_update = 0
 	if n_steps > 0:
-		with tqdm(desc="Training", total=n_steps, unit="steps") as t:
+		with tqdm(total=n_steps, desc="Training", unit="steps", disable=True) as t:
 			while testbed.frame():
 				if testbed.want_repl():
 					repl(testbed)
-				# What will happen when training is done?
+
 				if testbed.training_step >= n_steps:
 					if args.gui:
 						testbed.shall_train = False
 					else:
 						break
 
-				# Update progress bar
+				# Reset progress if training step is reset
 				if testbed.training_step < old_training_step or old_training_step == 0:
 					old_training_step = 0
 					t.reset()
 
-				now = time.monotonic()
-				if now - tqdm_last_update > 0.1:
+				# Update every 1000 steps
+				if testbed.training_step - old_training_step >= 1000:
+					# Use tqdm.write() for clear logging to prevent overwriting issues
+					tqdm.write(f"Training: {testbed.training_step}/{n_steps} steps, loss={testbed.loss:.6f}")
 					t.update(testbed.training_step - old_training_step)
-					t.set_postfix(loss=testbed.loss)
 					old_training_step = testbed.training_step
-					tqdm_last_update = now
+					tqdm_last_update = time.monotonic()
 
 	if args.save_snapshot:
 		os.makedirs(os.path.dirname(args.save_snapshot), exist_ok=True)
