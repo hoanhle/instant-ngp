@@ -1,6 +1,7 @@
 import json
 import copy
 from pathlib import Path
+import sys
 
 def leave_one_out_split(file_path, output_dir):
     # Ensure the output directory exists
@@ -56,7 +57,16 @@ def process_paintings(base_dir):
 
 def main():
     base_dir = '/home/leh19/test_run_1/JPG'  # Replace with your actual JPG base directory
-    process_paintings(base_dir)
+
+    # Open a log file to dump the output
+    log_file = Path('/home/leh19/test_run_1/JPG/data-processing-output_log.txt')  # You can replace this with the desired log file path
+    with log_file.open('w') as f:
+        # Redirect standard output to the file
+        sys.stdout = f
+        process_paintings(base_dir)
+
+    # Restore standard output back to the console
+    sys.stdout = sys.__stdout__
 
 if __name__ == "__main__":
     main()
