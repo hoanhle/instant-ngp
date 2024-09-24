@@ -1208,13 +1208,13 @@ void Testbed::imgui() {
 					m_edit_world_transform = false;
 				}
 
-				accum_reset |= ImGui::SliderFloat("Min x", ((float*)&m_render_aabb.min)+0, m_aabb.min.x, m_render_aabb.max.x, "%.3f");
-				accum_reset |= ImGui::SliderFloat("Min y", ((float*)&m_render_aabb.min)+1, m_aabb.min.y, m_render_aabb.max.y, "%.3f");
-				accum_reset |= ImGui::SliderFloat("Min z", ((float*)&m_render_aabb.min)+2, m_aabb.min.z, m_render_aabb.max.z, "%.3f");
+				accum_reset |= ImGui::SliderFloat("Min x", ((float*)&m_render_aabb.min)+0, 0, 1, "%.3f");
+				accum_reset |= ImGui::SliderFloat("Min y", ((float*)&m_render_aabb.min)+1, 0, 1, "%.3f");
+				accum_reset |= ImGui::SliderFloat("Min z", ((float*)&m_render_aabb.min)+2, 0, 1, "%.3f");
 				ImGui::Separator();
-				accum_reset |= ImGui::SliderFloat("Max x", ((float*)&m_render_aabb.max)+0, m_render_aabb.min.x, m_aabb.max.x, "%.3f");
-				accum_reset |= ImGui::SliderFloat("Max y", ((float*)&m_render_aabb.max)+1, m_render_aabb.min.y, m_aabb.max.y, "%.3f");
-				accum_reset |= ImGui::SliderFloat("Max z", ((float*)&m_render_aabb.max)+2, m_render_aabb.min.z, m_aabb.max.z, "%.3f");
+				accum_reset |= ImGui::SliderFloat("Max x", ((float*)&m_render_aabb.max)+0, 0, 1, "%.3f");
+				accum_reset |= ImGui::SliderFloat("Max y", ((float*)&m_render_aabb.max)+1, 0, 1, "%.3f");
+				accum_reset |= ImGui::SliderFloat("Max z", ((float*)&m_render_aabb.max)+2, 0, 1, "%.3f");
 				ImGui::Separator();
 				vec3 diag = m_render_aabb.diag();
 				bool edit_diag = false;
@@ -1380,6 +1380,9 @@ void Testbed::imgui() {
 				ImGui::Checkbox("Visualize cameras", &m_nerf.visualize_cameras);
 				accum_reset |= ImGui::SliderInt("Show acceleration", &m_nerf.show_accel, -1, 7);
 			}
+
+			ImGui::Checkbox("Visualize SfM points", &m_visualize_sfm_points);
+
 
 			if (!m_single_view) { ImGui::BeginDisabled(); }
 			if (ImGui::SliderInt("Visualized dimension", &m_visualized_dimension, -1, (int)network_width(m_visualized_layer)-1)) {
@@ -1791,6 +1794,10 @@ void Testbed::draw_visualizations(ImDrawList* list, const mat4x3& camera_matrix)
 
 	if (m_visualize_unit_cube) {
 		visualize_cube(list, world2proj, vec3(0.f), vec3(1.f), mat3::identity());
+	}
+
+	if (m_visualize_sfm_points) {
+		visualize_points(list, world2proj, "/home/leh19/test_run_1/JPG/painting_1/colmap_text/points3D.txt", mat3::identity());
 	}
 
 	if (m_edit_render_aabb) {

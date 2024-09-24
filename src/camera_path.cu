@@ -301,6 +301,50 @@ void visualize_cube(ImDrawList* list, const mat4& world2proj, const vec3& a, con
 	add_debug_line(list, world2proj, m * vec3{b.x, a.y, b.z}, m * vec3{b.x, b.y, b.z}, 0xffffffff);
 }
 
+
+void visualize_points(ImDrawList* list, const mat4& world2proj, const std::string& filename, const mat3& render_aabb_to_local) {
+	std::ifstream file(filename);
+	if (!file.is_open()) {
+		// Handle error
+		return;
+	}
+
+	std::vector<vec3> points;
+	std::string line;
+	while (std::getline(file, line)) {
+		std::istringstream iss(line);
+		int id;
+		float x, y, z;
+
+		// Read ID and coordinates
+		if (!(iss >> id >> x >> y >> z)) {
+			// Handle parsing error
+			continue;
+		}
+
+		vec3 point(y, z, x);
+		points.push_back(point);
+
+		// Skip the rest of the line or parse additional data if needed
+	}
+	file.close();
+
+	mat3 m = transpose(render_aabb_to_local);
+
+
+	for (const auto& p : points) {
+		// Apply scale of 0.33 and offset by (0.5, 0.5, 0.5)
+		vec3 transformed_point = m * p;
+		transformed_point = transformed_point * 0.33f + vec3(0.5f, 0.5f, 0.5f);
+
+		ImVec2 screen_pos;
+		if (debug_project(world2proj, transformed_point, screen_pos)) {
+			list->AddCircleFilled(screen_pos, 3.0f, 0xffffffff);
+		}
+	}
+}
+
+
 void visualize_nerf_camera(ImDrawList* list, const mat4& world2proj, const mat4x3& xform, float aspect, uint32_t col, float thickness) {
 	const float axis_size = 0.025f;
 	const vec3* xforms = (const vec3*)&xform;
