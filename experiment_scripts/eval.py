@@ -8,7 +8,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("/home/leh19/test_run_1/JPG/experiments_outputs/baseline.log"),  # Log to a file
+        logging.FileHandler("/home/leh19/test_run_1/JPG/experiments_outputs/baseline.log", mode='w'),  # Log to a file
         logging.StreamHandler()  # Also print to the console
     ]
 )
