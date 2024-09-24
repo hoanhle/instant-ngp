@@ -32,7 +32,7 @@ def parse_args():
 	parser.add_argument("--time_slice", default="", help="Time (in seconds) in the format t1,t2 within which the images should be generated from the video. E.g.: \"--time_slice '10,300'\" will generate images only from 10th second to 300th second of the video.")
 	parser.add_argument("--run_colmap", action="store_true", help="run colmap first on the image folder")
 	parser.add_argument("--colmap_matcher", default="sequential", choices=["exhaustive","sequential","spatial","transitive","vocab_tree"], help="Select which matcher colmap should use. Sequential for videos, exhaustive for ad-hoc images.")
-	parser.add_argument("--colmap_db", default="colmap.db", help="colmap database filename")
+	parser.add_argument("--colmap_db", default="colmap.db", help="colmap database filepath")
 	parser.add_argument("--colmap_camera_model", default="OPENCV", choices=["SIMPLE_PINHOLE", "PINHOLE", "SIMPLE_RADIAL", "RADIAL", "OPENCV", "SIMPLE_RADIAL_FISHEYE", "RADIAL_FISHEYE", "OPENCV_FISHEYE"], help="Camera model")
 	parser.add_argument("--colmap_camera_params", default="", help="Intrinsic parameters, depending on the chosen model. Format: fx,fy,cx,cy,dist")
 	parser.add_argument("--images", default="images", help="Input path to the images.")
@@ -76,13 +76,13 @@ def run_ffmpeg(args):
 	video =  "\"" + args.video_in + "\""
 	fps = float(args.video_fps) or 1.0
 	print(f"running ffmpeg with input video file={video}, output image folder={images}, fps={fps}.")
-	if not args.overwrite and (input(f"warning! folder '{images}' will be deleted/replaced. continue? (Y/n)").lower().strip()+"y")[:1] != "y":
-		sys.exit(1)
-	try:
-		# Passing Images' Path Without Double Quotes
-		shutil.rmtree(args.images)
-	except:
-		pass
+	# if not args.overwrite: #  and (input(f"warning! folder '{images}' will be deleted/replaced. continue? (Y/n)").lower().strip()+"y")[:1] != "y"
+	# 	sys.exit(1)
+	# try:
+	# 	# Passing Images' Path Without Double Quotes
+	# 	shutil.rmtree(args.images)
+	# except:
+	# 	pass
 	do_system(f"mkdir {images}")
 
 	time_slice_value = ""
@@ -116,10 +116,10 @@ def run_colmap(args):
 	text=args.text
 	sparse=db_noext+"_sparse"
 	print(f"running colmap with:\n\tdb={db}\n\timages={images}\n\tsparse={sparse}\n\ttext={text}")
-	if not args.overwrite and (input(f"warning! folders '{sparse}' and '{text}' will be deleted/replaced. continue? (Y/n)").lower().strip()+"y")[:1] != "y":
-		sys.exit(1)
-	if os.path.exists(db):
-		os.remove(db)
+	# if not args.overwrite and (input(f"warning! folders '{sparse}' and '{text}' will be deleted/replaced. continue? (Y/n)").lower().strip()+"y")[:1] != "y":
+	# 	sys.exit(1)
+	# if os.path.exists(db):
+	# 	os.remove(db)
 	do_system(f"{colmap_binary} feature_extractor --ImageReader.camera_model {args.colmap_camera_model} --ImageReader.camera_params \"{args.colmap_camera_params}\" --SiftExtraction.estimate_affine_shape=true --SiftExtraction.domain_size_pooling=true --ImageReader.single_camera 1 --database_path {db} --image_path {images}")
 	match_cmd = f"{colmap_binary} {args.colmap_matcher}_matcher --SiftMatching.guided_matching=true --database_path {db}"
 	if args.vocab_path:
@@ -189,6 +189,22 @@ def closest_point_2_lines(oa, da, ob, db): # returns point closest to both rays 
 	if tb > 0:
 		tb = 0
 	return (oa+ta*da+ob+tb*db) * 0.5, denom
+
+# Function to apply the same transformations to 3D points
+def transform_points(point):
+	# Step 1: Flip Y and Z axes
+	point[2] *= -1  # Flip Z-axis
+	point[1] *= -1  # Flip Y-axis
+
+	# Step 2: Reorder the axes
+	point = point[[1, 0, 2]]  # Swap Y and X axes
+
+	# Step 3: Flip the world upside down (flip Z-axis again)
+	point[2] *= -1  # Flip Z-axis back
+
+	return point
+
+
 
 if __name__ == "__main__":
 	args = parse_args()
@@ -294,6 +310,19 @@ if __name__ == "__main__":
 		print("No cameras found!")
 		sys.exit(1)
 
+	points_3d = {}
+	points_3d_path = os.path.join(TEXT_FOLDER, "points3D.txt")
+	with open(points_3d_path, "r") as f:
+		for line in f:
+			if line.startswith("#"):
+				continue
+			els = line.split()
+			point_id = int(els[0])
+			point_xyz = np.array([float(els[1]), float(els[2]), float(els[3])])
+			color = tuple(map(int, els[4:7]))  # R, G, B values
+			error = float(els[7])  # ERROR value
+			points_3d[point_id] = (point_xyz, color, error)
+
 	with open(os.path.join(TEXT_FOLDER,"images.txt"), "r") as f:
 		i = 0
 		bottom = np.array([0.0, 0.0, 0.0, 1.0]).reshape([1, 4])
@@ -354,23 +383,31 @@ if __name__ == "__main__":
 
 					up += c2w[0:3,1]
 
+					flipped_points = {}
+					for point_id, (point_xyz, color, error) in points_3d.items():
+						# Transform the point
+						transformed_point = transform_points(point_xyz)
+
+						# Store the transformed point
+						flipped_points[point_id] = (transformed_point, color, error)
+
 				frame = {"file_path":name,"sharpness":b,"transform_matrix": c2w}
 				if len(cameras) != 1:
 					frame.update(cameras[int(elems[8])])
 				out["frames"].append(frame)
 	nframes = len(out["frames"])
 
-	if args.keep_colmap_coords:
-		flip_mat = np.array([
-			[1, 0, 0, 0],
-			[0, -1, 0, 0],
-			[0, 0, -1, 0],
-			[0, 0, 0, 1]
-		])
-
-		for f in out["frames"]:
-			f["transform_matrix"] = np.matmul(f["transform_matrix"], flip_mat) # flip cameras (it just works)
-	else:
+	# if args.keep_colmap_coords:
+	# 	flip_mat = np.array([
+	# 		[1, 0, 0, 0],
+	# 		[0, -1, 0, 0],
+	# 		[0, 0, -1, 0],
+	# 		[0, 0, 0, 1]
+	# 	])
+	#
+	# 	for f in out["frames"]:
+	# 		f["transform_matrix"] = np.matmul(f["transform_matrix"], flip_mat) # flip cameras (it just works)
+	if not args.keep_colmap_coords:
 		# don't keep colmap coords - reorient the scene to be easier to work with
 
 		up = up / np.linalg.norm(up)
@@ -407,6 +444,41 @@ if __name__ == "__main__":
 		print("avg camera distance from origin", avglen)
 		for f in out["frames"]:
 			f["transform_matrix"][0:3,3] *= 4.0 / avglen # scale to "nerf sized"
+
+			scale_factor = 4.0 / avglen
+
+		# Step 4: Transform the 3D points
+		transformed_points = {}
+		for point_id, (point_xyz, color, error) in flipped_points.items():
+			# Reorient the point
+			point_xyz_h = np.append(point_xyz, 1)  # Convert to homogeneous coordinates
+			transformed_point = np.matmul(R, point_xyz_h)[:3]
+
+			# Translate the point
+			transformed_point -= totp
+			#
+			# Scale the point
+			transformed_point *= scale_factor
+
+			# Store the transformed point
+			transformed_points[point_id] = (transformed_point, color, error)
+
+	# Open the file to write the transformed points
+	with open(points_3d_path, "w") as f:
+		# Optionally, write a header comment for the file
+		f.write("# 3D Points after transformation\n")
+		f.write("# Format: point_id X Y Z R G B error\n")
+
+		# Iterate over the transformed points and save each one
+		for point_id, (transformed_point, color, error) in transformed_points.items():
+			# Extract the transformed XYZ coordinates
+			x, y, z = transformed_point
+
+			# Extract the color (R, G, B)
+			r, g, b = color
+
+			# Write the point to the file in the same format as the original
+			f.write(f"{point_id} {x:.6f} {y:.6f} {z:.6f} {r} {g} {b} {error:.6f}\n")
 
 	for f in out["frames"]:
 		f["transform_matrix"] = f["transform_matrix"].tolist()
