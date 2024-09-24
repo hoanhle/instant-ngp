@@ -74,9 +74,9 @@ struct BoundingBox {
 		max = tcnn::max(max, point);
 	}
 
-	NGP_HOST_DEVICE void inflate(float amount) {
-		min -= vec3(amount);
-		max += vec3(amount);
+	NGP_HOST_DEVICE void inflate(const vec3& amount) {
+		min -= amount;
+		max += amount;
 	}
 
 	NGP_HOST_DEVICE vec3 diag() const {

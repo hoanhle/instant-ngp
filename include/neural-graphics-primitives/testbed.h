@@ -759,7 +759,7 @@ public:
 
 		float cone_angle_constant = 1.f/256.f;
 
-		bool visualize_cameras = false;
+		bool visualize_cameras = true;
 		bool render_with_lens_distortion = false;
 		Lens render_lens = {};
 
@@ -961,6 +961,7 @@ public:
 	fs::path m_root_dir = "";
 
 	bool m_visualize_unit_cube = false;
+	bool m_visualize_sfm_points = false;
 	bool m_edit_render_aabb = false;
 	bool m_edit_world_transform = true;
 
