@@ -302,7 +302,7 @@ void visualize_cube(ImDrawList* list, const mat4& world2proj, const vec3& a, con
 }
 
 
-void visualize_points(ImDrawList* list, const mat4& world2proj, const std::string& filename, const mat3& render_aabb_to_local) {
+	void visualize_points(ImDrawList* list, const mat4& world2proj, const std::string& filename, const mat3& render_aabb_to_local) {
 	std::ifstream file(filename);
 	if (!file.is_open()) {
 		// Handle error
@@ -310,20 +310,32 @@ void visualize_points(ImDrawList* list, const mat4& world2proj, const std::strin
 	}
 
 	std::vector<vec3> points;
+	std::vector<ImU32> colors; // To store the color for each point
 	std::string line;
 	while (std::getline(file, line)) {
 		std::istringstream iss(line);
 		int id;
 		float x, y, z;
+		float r = 1.0f, g = 1.0f, b = 1.0f; // Default white color
 
-		// Read ID and coordinates
+		// Read ID, coordinates, and optionally RGB color
 		if (!(iss >> id >> x >> y >> z)) {
 			// Handle parsing error
 			continue;
 		}
 
+		// Attempt to read RGB values, defaulting to white if not present
+		if (!(iss >> r >> g >> b)) {
+			// If RGB values aren't provided, keep them as the default (white)
+			r = g = b = 1.0f;
+		}
+
 		vec3 point(y, z, x);
 		points.push_back(point);
+
+		// Convert RGB values to ImU32 color format (0xRRGGBBAA)
+		ImU32 color = IM_COL32(static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), 255);
+		colors.push_back(color);
 
 		// Skip the rest of the line or parse additional data if needed
 	}
@@ -331,15 +343,17 @@ void visualize_points(ImDrawList* list, const mat4& world2proj, const std::strin
 
 	mat3 m = transpose(render_aabb_to_local);
 
+	for (size_t i = 0; i < points.size(); ++i) {
+		const vec3& p = points[i];
+		ImU32 color = colors[i];
 
-	for (const auto& p : points) {
 		// Apply scale of 0.33 and offset by (0.5, 0.5, 0.5)
 		vec3 transformed_point = m * p;
 		transformed_point = transformed_point * 0.33f + vec3(0.5f, 0.5f, 0.5f);
 
 		ImVec2 screen_pos;
 		if (debug_project(world2proj, transformed_point, screen_pos)) {
-			list->AddCircleFilled(screen_pos, 3.0f, 0xffffffff);
+			list->AddCircleFilled(screen_pos, 3.0f, color); // Use color for each point
 		}
 	}
 }
