@@ -962,6 +962,7 @@ public:
 
 	bool m_visualize_unit_cube = false;
 	bool m_visualize_sfm_points = false;
+	char m_sfm_points_path[ImGuiVars::MAX_PATH_LEN] = "sfm_points.json";
 	bool m_edit_render_aabb = false;
 	bool m_edit_world_transform = true;
 

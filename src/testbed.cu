@@ -1383,6 +1383,8 @@ void Testbed::imgui() {
 
 			ImGui::Checkbox("Visualize SfM points", &m_visualize_sfm_points);
 
+			ImGui::InputText("##PathFile", m_sfm_points_path, 1024);
+
 
 			if (!m_single_view) { ImGui::BeginDisabled(); }
 			if (ImGui::SliderInt("Visualized dimension", &m_visualized_dimension, -1, (int)network_width(m_visualized_layer)-1)) {
@@ -1797,7 +1799,7 @@ void Testbed::draw_visualizations(ImDrawList* list, const mat4x3& camera_matrix)
 	}
 
 	if (m_visualize_sfm_points) {
-		visualize_points(list, world2proj, "/home/leh19/test_run_1/JPG/painting_1/colmap_text/points3D.txt", mat3::identity());
+		visualize_points(list, world2proj, m_sfm_points_path, mat3::identity());
 	}
 
 	if (m_edit_render_aabb) {
