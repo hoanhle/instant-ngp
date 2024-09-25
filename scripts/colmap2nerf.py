@@ -192,10 +192,6 @@ def closest_point_2_lines(oa, da, ob, db): # returns point closest to both rays 
 
 # Function to apply the same transformations to 3D points
 def transform_points(point):
-	# Step 1: Flip Y and Z axes
-	point[2] *= -1  # Flip Z-axis
-	point[1] *= -1  # Flip Y-axis
-
 	# Step 2: Reorder the axes
 	point = point[[1, 0, 2]]  # Swap Y and X axes
 
