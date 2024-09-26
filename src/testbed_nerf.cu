@@ -2209,14 +2209,6 @@ void Testbed::load_nerf_post() { // moved the second half of load_nerf here
 		)};
 	}
 
-	m_aabb = BoundingBox{vec3(0.5f), vec3(0.5f)};
-	m_aabb.inflate(0.5f * std::min(1 << (NERF_CASCADES()-1), m_nerf.training.dataset.aabb_scale));
-	m_raw_aabb = m_aabb;
-	m_render_aabb = m_aabb;
-	m_render_aabb_to_local = m_nerf.training.dataset.render_aabb_to_local;
-	if (!m_nerf.training.dataset.render_aabb.is_empty()) {
-		m_render_aabb = m_nerf.training.dataset.render_aabb.intersection(m_aabb);
-	}
 
 	m_nerf.max_cascade = 0;
 	while ((1 << m_nerf.max_cascade) < m_nerf.training.dataset.aabb_scale) {
@@ -2255,6 +2247,22 @@ void Testbed::load_nerf(const fs::path& data_path) {
 			// The AABB scale affects network size indirectly. If it changed after loading,
 			// we need to reset the previously configured network to keep a consistent internal state.
 			reset_network();
+		}
+		nlohmann::json json = nlohmann::json::parse(std::ifstream{native_string(json_paths.front())}, nullptr, true, true);
+
+		if (json.contains("m_aabb")) {
+			m_aabb.min={float(json["m_aabb"][0][0]),float(json["m_aabb"][0][1]),float(json["m_aabb"][0][2])};
+			m_aabb.max={float(json["m_aabb"][1][0]),float(json["m_aabb"][1][1]),float(json["m_aabb"][1][2])};
+		} else {
+			m_aabb = BoundingBox{vec3(0.5f), vec3(0.5f)};
+			m_aabb.inflate(0.5f * std::min(1 << (NERF_CASCADES()-1), m_nerf.training.dataset.aabb_scale));
+			}
+
+		m_raw_aabb = m_aabb;
+		m_render_aabb = m_aabb;
+		m_render_aabb_to_local = m_nerf.training.dataset.render_aabb_to_local;
+		if (!m_nerf.training.dataset.render_aabb.is_empty()) {
+			m_render_aabb = m_nerf.training.dataset.render_aabb.intersection(m_aabb);
 		}
 	}
 
