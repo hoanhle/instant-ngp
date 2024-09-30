@@ -1228,6 +1228,18 @@ void Testbed::imgui() {
 					m_render_aabb = BoundingBox(cen - diag * 0.5f, cen + diag * 0.5f);
 				}
 
+				if (ImGui::Button("Update training box")) {
+					m_aabb = m_render_aabb;
+					accum_reset = true;
+
+					// Print the new location of the training box
+					const vec3& min = m_aabb.min;
+					const vec3& max = m_aabb.max;
+					std::cout << "Training box updated. New location - Min: ("
+							  << min.x << ", " << min.y << ", " << min.z << "), Max: ("
+							  << max.x << ", " << max.y << ", " << max.z << ")" << std::endl;
+				}
+
 				if (ImGui::Button("Reset crop box")) {
 					accum_reset = true;
 					m_render_aabb = m_aabb;
@@ -1807,56 +1819,56 @@ void Testbed::draw_visualizations(ImDrawList* list, const mat4x3& camera_matrix)
 			visualize_cube(list, world2proj, m_render_aabb.min, m_render_aabb.max, m_render_aabb_to_local);
 		}
 
-		ImGuiIO& io = ImGui::GetIO();
-		// float flx = focal.x;
-		float fly = focal.y;
-		float zfar = m_ndc_zfar;
-		float znear = m_ndc_znear;
-		mat4 view2proj_guizmo = transpose(mat4{
-			fly * 2.0f / aspect, 0.0f,       0.0f,                            0.0f,
-			0.0f,                -fly * 2.f, 0.0f,                            0.0f,
-			0.0f,                0.0f,       (zfar + znear) / (zfar - znear), -(2.0f * zfar * znear) / (zfar - znear),
-			0.0f,                0.0f,       1.0f,                            0.0f,
-		});
-
-		ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-
-		static mat4 matrix = mat4::identity();
-		static mat4 world2view_guizmo = mat4::identity();
-
-		vec3 cen = transpose(m_render_aabb_to_local) * m_render_aabb.center();
-		if (!ImGuizmo::IsUsing()) {
-			// The the guizmo is being used, it handles updating its matrix on its own.
-			// Outside interference can only lead to trouble.
-			auto rot = transpose(m_render_aabb_to_local);
-			matrix = mat4(mat4x3(rot[0], rot[1], rot[2], cen));
-
-			// Additionally, the world2view transform must stay fixed, else the guizmo will incorrectly
-			// interpret the state from past frames. Special handling is necessary here, because below
-			// we emulate world translation and rotation through (inverse) camera movement.
-			world2view_guizmo = world2view;
-		}
-
-		auto prev_matrix = matrix;
-
-		if (ImGuizmo::Manipulate((const float*)&world2view_guizmo, (const float*)&view2proj_guizmo, m_camera_path.m_gizmo_op, ImGuizmo::LOCAL, (float*)&matrix, NULL, NULL)) {
-			if (m_edit_world_transform) {
-				// We transform the world by transforming the camera in the opposite direction.
-				auto rel = prev_matrix * inverse(matrix);
-				m_camera = mat3(rel) * m_camera;
-				m_camera[3] += rel[3].xyz();
-
-				m_up_dir = mat3(rel) * m_up_dir;
-			} else {
-				m_render_aabb_to_local = transpose(mat3(matrix));
-				vec3 new_cen = m_render_aabb_to_local * matrix[3].xyz();
-				vec3 old_cen = m_render_aabb.center();
-				m_render_aabb.min += new_cen - old_cen;
-				m_render_aabb.max += new_cen - old_cen;
-			}
-
-			reset_accumulation();
-		}
+		// ImGuiIO& io = ImGui::GetIO();
+		// // float flx = focal.x;
+		// float fly = focal.y;
+		// float zfar = m_ndc_zfar;
+		// float znear = m_ndc_znear;
+		// mat4 view2proj_guizmo = transpose(mat4{
+		// 	fly * 2.0f / aspect, 0.0f,       0.0f,                            0.0f,
+		// 	0.0f,                -fly * 2.f, 0.0f,                            0.0f,
+		// 	0.0f,                0.0f,       (zfar + znear) / (zfar - znear), -(2.0f * zfar * znear) / (zfar - znear),
+		// 	0.0f,                0.0f,       1.0f,                            0.0f,
+		// });
+		//
+		// ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+		//
+		// static mat4 matrix = mat4::identity();
+		// static mat4 world2view_guizmo = mat4::identity();
+		//
+		// vec3 cen = transpose(m_render_aabb_to_local) * m_render_aabb.center();
+		// if (!ImGuizmo::IsUsing()) {
+		// 	// The the guizmo is being used, it handles updating its matrix on its own.
+		// 	// Outside interference can only lead to trouble.
+		// 	auto rot = transpose(m_render_aabb_to_local);
+		// 	matrix = mat4(mat4x3(rot[0], rot[1], rot[2], cen));
+		//
+		// 	// Additionally, the world2view transform must stay fixed, else the guizmo will incorrectly
+		// 	// interpret the state from past frames. Special handling is necessary here, because below
+		// 	// we emulate world translation and rotation through (inverse) camera movement.
+		// 	world2view_guizmo = world2view;
+		// }
+		//
+		// auto prev_matrix = matrix;
+		//
+		// if (ImGuizmo::Manipulate((const float*)&world2view_guizmo, (const float*)&view2proj_guizmo, m_camera_path.m_gizmo_op, ImGuizmo::LOCAL, (float*)&matrix, NULL, NULL)) {
+		// 	if (m_edit_world_transform) {
+		// 		// We transform the world by transforming the camera in the opposite direction.
+		// 		auto rel = prev_matrix * inverse(matrix);
+		// 		m_camera = mat3(rel) * m_camera;
+		// 		m_camera[3] += rel[3].xyz();
+		//
+		// 		m_up_dir = mat3(rel) * m_up_dir;
+		// 	} else {
+		// 		m_render_aabb_to_local = transpose(mat3(matrix));
+		// 		vec3 new_cen = m_render_aabb_to_local * matrix[3].xyz();
+		// 		vec3 old_cen = m_render_aabb.center();
+		// 		m_render_aabb.min += new_cen - old_cen;
+		// 		m_render_aabb.max += new_cen - old_cen;
+		// 	}
+		//
+		// 	reset_accumulation();
+		// }
 	}
 
 	if (m_camera_path.imgui_viz(list, view2proj, world2proj, world2view, focal, aspect, m_ndc_znear, m_ndc_zfar)) {
