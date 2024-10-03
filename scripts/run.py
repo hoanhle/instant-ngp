@@ -243,9 +243,16 @@ if __name__ == "__main__":
 				testbed.render_ground_truth = False
 				image = testbed.render(resolution[0], resolution[1], spp, True)
 
-				ref_image_path = os.path.join(args.output_dir, "ref.png")
-				out_image_path = os.path.join(args.output_dir, "out.png")
-				diff_image_path = os.path.join(args.output_dir, "diff.png")
+				if i == 0:
+					ref_image_path = os.path.join(args.output_dir, "ref.png")
+					out_image_path = os.path.join(args.output_dir, "out.png")
+					diff_image_path = os.path.join(args.output_dir, "diff.png")
+					write_image(ref_image_path, ref_image)
+					write_image(out_image_path, image)
+
+					diffimg = np.absolute(image - ref_image)
+					diffimg[...,3:4] = 1.0
+					write_image(diff_image_path, diffimg)
 
 				A = np.clip(linear_to_srgb(image[...,:3]), 0.0, 1.0)
 				R = np.clip(linear_to_srgb(ref_image[...,:3]), 0.0, 1.0)
