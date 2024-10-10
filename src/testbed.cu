@@ -3601,6 +3601,21 @@ Testbed::NetworkDims Testbed::network_dims() const {
 	}
 }
 
+
+std::string vector_to_string(const std::vector<uint32_t>& vec) {
+	std::ostringstream oss;
+	oss << "[";
+	for (size_t i = 0; i < vec.size(); ++i) {
+		oss << vec[i];
+		if (i != vec.size() - 1) {
+			oss << ", ";
+		}
+	}
+	oss << "]";
+	return oss.str();
+}
+
+
 void Testbed::reset_network(bool clear_density_grid) {
 	m_sdf.iou_decay = 0;
 
@@ -3673,11 +3688,7 @@ void Testbed::reset_network(bool clear_density_grid) {
 
 		const uint32_t log2_hashmap_size = encoding_config.value("log2_hashmap_size", 15);
 
-		m_base_grid_resolution = encoding_config.value("base_resolution", 0);
-		if (!m_base_grid_resolution) {
-			m_base_grid_resolution = 1u << ((log2_hashmap_size) / dims.n_pos);
-			encoding_config["base_resolution"] = m_base_grid_resolution;
-		}
+		m_base_grid_resolution = 16;
 
 		float desired_resolution = 2048.0f; // Desired resolution of the finest hashgrid level over the unit cube
 		if (m_testbed_mode == ETestbedMode::Image) {
@@ -3688,10 +3699,10 @@ void Testbed::reset_network(bool clear_density_grid) {
 
 		// Automatically determine suitable per_level_scale
 		m_per_level_scale = encoding_config.value("per_level_scale", 0.0f);
-		if (m_per_level_scale <= 0.0f && m_n_levels > 1) {
-			m_per_level_scale = std::exp(std::log(desired_resolution * (float)m_nerf.training.dataset.aabb_scale / (float)m_base_grid_resolution) / (m_n_levels-1));
-			encoding_config["per_level_scale"] = m_per_level_scale;
-		}
+		// if (m_per_level_scale <= 0.0f && m_n_levels > 1) {
+		// 	m_per_level_scale = std::exp(std::log(desired_resolution * (float)m_nerf.training.dataset.aabb_scale / (float)m_base_grid_resolution) / (m_n_levels-1));
+		// 	encoding_config["per_level_scale"] = m_per_level_scale;
+		// }
 
 		tlog::info()
 			<< "GridEncoding: "
