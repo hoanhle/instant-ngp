@@ -1,0 +1,6 @@
+{
+	"parent": "base.json",
+	"encoding": {
+		"base_resolution": [16, 16, 1]
+	}
+}
