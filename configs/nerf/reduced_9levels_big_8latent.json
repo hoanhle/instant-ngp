@@ -1,0 +1,8 @@
+{
+	"parent": "base.json",
+	"encoding": {
+		"log2_hashmap_size": 22,
+		"n_levels": 9,
+		"base_resolution": [16, 16, 1]
+	}
+}

@@ -3,19 +3,18 @@ from pathlib import Path
 import argparse
 import logging
 
-# Set up logging to log to both the console and a log file
+# Set up logging to log only to the console
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("/home/leh19/test_run_1/JPG/experiments_outputs/baseline.log", mode='w'),  # Log to a file
-        logging.StreamHandler()  # Also print to the console
+        logging.StreamHandler()  # Only print to the console
     ]
 )
 
-def run_experiment(script, painting_dir, n_steps):
+def run_experiment(script, painting_dir, n_steps, transform_file_name="transforms"):
     painting_dir = Path(painting_dir)
-    input_dir = painting_dir / 'leave_one_out'
+    input_dir = painting_dir / transform_file_name / 'leave_one_out'
 
     # Ensure the leave_one_out directory exists
     if not input_dir.exists():
@@ -24,7 +23,7 @@ def run_experiment(script, painting_dir, n_steps):
         logging.info(message)
         return
 
-    # Find all train and test files in the output directory
+    # Find all train and test files in the input directory
     train_files = sorted(input_dir.glob('train_leave_*.json'))
     test_files = sorted(input_dir.glob('test_leave_*.json'))
 
@@ -34,31 +33,70 @@ def run_experiment(script, painting_dir, n_steps):
         logging.error(error_message)
         raise ValueError(error_message)
 
+    # Define the run modes with the new output directory names
+    run_modes = ['default', 'reduced_decrease_step_size']
+
     # Iterate over each train-test pair and run the command
     for train_file, test_file in zip(train_files, test_files):
-        # Create a unique output directory for each pair of train and test files
-        output_dir = painting_dir / 'output' / f'{train_file.stem}_vs_{test_file.stem}'
-        output_dir.mkdir(parents=True, exist_ok=True)
+        for mode in run_modes:
+            # Determine the output directory based on the mode
+            if mode == 'reduced_decrease_step_size':
+                output_base = 'output_reduced_decrease_step_size'
+            else:
+                output_base = 'output_decrease_step_size'
 
-        # Construct the command to run
-        command = [
-            "python3", script,
-            "--scene", str(train_file),
-            "--test_transforms", str(test_file),
-            "--n_steps", str(n_steps),
-            "--output_dir", str(output_dir),
-            "--save_snapshot", str(output_dir / 'model.ingp')
-        ]
+            output_dir = painting_dir / transform_file_name / output_base / f'{train_file.stem}_vs_{test_file.stem}'
 
-        # Log and print the command being run
-        command_message = f"Running command for {painting_dir}: {' '.join(command)}"
-        print(command_message)
-        logging.info(command_message)
+            # Check if output directory exists and is not empty
+            if output_dir.exists() and any(output_dir.iterdir()):
+                message = f"Output exists for {output_dir}, skipping..."
+                print(message)
+                logging.info(message)
+                continue  # Skip this experiment
 
-        # Run the command and capture the output without including progress bars
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        logging.info(result.stdout)
-        logging.error(result.stderr)
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            # Set up a unique log file for this experiment
+            log_file_path = output_dir / 'experiment.log'
+
+            # Create a FileHandler for this log file
+            file_handler = logging.FileHandler(log_file_path, mode='w')
+            file_handler.setLevel(logging.INFO)
+            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            file_handler.setFormatter(formatter)
+
+            # Add the FileHandler to the logger
+            logger = logging.getLogger()
+            logger.addHandler(file_handler)
+
+            try:
+                # Construct the command to run
+                command = [
+                    "python3", script,
+                    "--scene", str(train_file),
+                    "--test_transforms", str(test_file),
+                    "--n_steps", str(n_steps),
+                    "--output_dir", str(output_dir),
+                    "--save_snapshot", str(output_dir / 'model.ingp')
+                ]
+
+                # Add reduced.json if running in 'with_reduced' mode
+                if mode == 'reduced_decrease_step_size':
+                    command.insert(2, 'configs/nerf/reduced.json')
+
+                # Log and print the command being run
+                command_message = f"Running command for {painting_dir} in mode '{mode}': {' '.join(command)}"
+                print(command_message)
+                logging.info(command_message)
+
+                # Run the command and capture the output without including progress bars
+                result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                logging.info(result.stdout)
+                logging.error(result.stderr)
+            finally:
+                # Remove the FileHandler after the experiment
+                logger.removeHandler(file_handler)
+                file_handler.close()
 
 def process_paintings(script, base_dir, n_steps):
     base_dir = Path(base_dir)
@@ -69,7 +107,8 @@ def process_paintings(script, base_dir, n_steps):
             message = f"Processing painting: {painting_dir}"
             print(message)
             logging.info(message)
-            run_experiment(script, painting_dir, n_steps)
+            # run_experiment(script, painting_dir, n_steps, "transforms")
+            run_experiment(script, painting_dir, n_steps, "transforms_tight")
 
 def main():
     parser = argparse.ArgumentParser(description="Run experiments with train and test JSONs for all paintings.")
