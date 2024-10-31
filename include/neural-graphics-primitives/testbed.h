@@ -690,7 +690,7 @@ public:
 			bool linear_colors = false;
 			ELossType loss_type = ELossType::L2;
 			ELossType depth_loss_type = ELossType::L1;
-			bool snap_to_pixel_centers = true;
+			bool snap_to_pixel_centers = false;
 			bool train_envmap = false;
 
 			bool optimize_distortion = false;
