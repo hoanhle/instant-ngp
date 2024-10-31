@@ -763,6 +763,13 @@ __global__ void generate_training_samples_nerf(
 		}
 	}
 
+	if (pix_idx == 0 and img == 0) {
+		printf("Thread %u: Ray Origin = (%f, %f, %f)\n", i,
+			ray_unnormalized.o.x, ray_unnormalized.o.y, ray_unnormalized.o.z);
+		printf("Thread %u: Ray Direction = (%f, %f, %f)\n", i,
+			ray_unnormalized.d.x, ray_unnormalized.d.y, ray_unnormalized.d.z);
+	}
+
 	vec3 ray_d_normalized = normalize(ray_unnormalized.d);
 
 	vec2 tminmax = aabb.ray_intersect(ray_unnormalized.o, ray_d_normalized);
