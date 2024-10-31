@@ -25,7 +25,7 @@ inline constexpr __device__ uint32_t NERF_GRIDSIZE() { return 128; }
 inline constexpr __device__ uint32_t NERF_GRID_N_CELLS() { return NERF_GRIDSIZE() * NERF_GRIDSIZE() * NERF_GRIDSIZE(); }
 
 inline constexpr __device__ float NERF_RENDERING_NEAR_DISTANCE() { return 0.05f; }
-inline constexpr __device__ uint32_t NERF_STEPS() { return 1024; } // finest number of steps per unit length
+inline constexpr __device__ uint32_t NERF_STEPS() { return 4096; } // finest number of steps per unit length
 inline constexpr __device__ uint32_t NERF_CASCADES() { return 8; }
 
 inline constexpr __device__ float SQRT3() { return 1.73205080757f; }
