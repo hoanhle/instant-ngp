@@ -30,10 +30,17 @@ def render_video(resolution, numframes, snapshot, camera_path, name, spp, fps, e
     for i in tqdm(list(range(min(numframes,numframes+1))), unit="frames", desc=f"Rendering"):
         testbed.camera_smoothing = i > 0
         frame = testbed.render(resolution[0], resolution[1], spp, True, float(i)/numframes, float(i + 1)/numframes, fps, shutter_fraction=0.0)
-        common.write_image(f"temp/{i:04d}.jpg", np.clip(frame * 2**exposure, 0.0, 1.0), quality=100)
+        common.write_image(f"temp/{i:04d}.png", np.clip(frame * 2**exposure, 0.0, 1.0))
 
-    os.system(f"ffmpeg -i temp/%04d.jpg -vf \"fps={fps}\" -c:v libx264 -pix_fmt yuv420p {name}_test.mp4")
-    shutil.rmtree('temp')
+
+    """
+    The -c:v option sets the codec for the video stream. libx264 is the codec for H.264 encoding, which provides efficient compression and is widely compatible.    
+    The -pix_fmt option sets the pixel format. yuv420p is a common format for H.264 videos, which improves compatibility with most video players.
+    The -crf (Constant Rate Factor) option controls the quality of the video. 0 is lossless, meaning no quality loss during compression, though it generates larger file sizes.
+    The -preset option controls the encoding speed vs. file size trade-off. veryslow provides the best compression (smallest file size) but takes the longest to encode. This setting affects how efficiently ffmpeg encodes the video without sacrificing quality.
+    """
+    os.system(f"ffmpeg -i temp/%04d.png -vf \"fps={fps}\" -c:v libx264 -pix_fmt yuv444p -crf 0 -preset veryslow {name}_test.mp4")
+    # shutil.rmtree('temp')
 
 
 def parse_args():
