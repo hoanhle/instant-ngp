@@ -201,7 +201,7 @@ void Testbed::set_mode(ETestbedMode mode) {
 		}
 
 		if (m_dlss_provider && m_aperture_size == 0.0f) {
-			m_dlss = true;
+			m_dlss = false; // turn off dlss by default
 		}
 	} else {
 		m_use_aux_devices = false;
@@ -3092,7 +3092,7 @@ void Testbed::init_window(int resw, int resh, bool hidden, bool second_window) {
 		try {
 			m_dlss_provider = init_vulkan_and_ngx();
 			if (m_testbed_mode == ETestbedMode::Nerf && m_aperture_size == 0.0f) {
-				m_dlss = true;
+				m_dlss = false; // disable DLSS
 			}
 		} catch (const std::runtime_error& e) {
 			tlog::warning() << "Could not initialize Vulkan and NGX. DLSS not supported. (" << e.what() << ")";
@@ -4469,6 +4469,7 @@ void Testbed::render_frame_epilogue(
 	CudaRenderBuffer& render_buffer,
 	bool to_srgb
 ) {
+
 	vec2 focal_length = calc_focal_length(render_buffer.in_resolution(), relative_focal_length, m_fov_axis, m_zoom);
 	vec2 screen_center = render_screen_center(orig_screen_center);
 

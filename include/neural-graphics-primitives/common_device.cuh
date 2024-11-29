@@ -802,8 +802,37 @@ inline NGP_HOST_DEVICE vec4 read_rgba(ivec2 px, const ivec2& resolution, const v
 }
 
 inline NGP_HOST_DEVICE vec4 read_rgba(vec2 pos, const ivec2& resolution, const void* pixels, EImageDataType image_data_type, uint32_t img = 0) {
+
+	// Do bilinear interpolation for the target RGB
+	// // Compute the exact position in pixel coordinates
+	// vec2 pos_px = pos * vec2(resolution);
+	//
+	// // Get the integer part of the position
+	// ivec2 px_int = ivec2(floor(pos_px));
+	//
+	// // Compute the fractional part (weights for interpolation)
+	// vec2 weight = pos_px - vec2(px_int);
+	//
+	// // Clamp the integer pixel positions to ensure they are within bounds
+	// px_int = clamp(px_int, ivec2(0), resolution - ivec2(2));
+	//
+	// // Read the four neighboring pixels for interpolation
+	// vec4 c00 = read_rgba(px_int, resolution, pixels, image_data_type, img);
+	// vec4 c10 = read_rgba(px_int + ivec2(1, 0), resolution, pixels, image_data_type, img);
+	// vec4 c01 = read_rgba(px_int + ivec2(0, 1), resolution, pixels, image_data_type, img);
+	// vec4 c11 = read_rgba(px_int + ivec2(1, 1), resolution, pixels, image_data_type, img);
+	//
+	// // Perform bilinear interpolation
+	// vec4 c0 = c00 * (1.0f - weight.x) + c10 * weight.x;
+	// vec4 c1 = c01 * (1.0f - weight.x) + c11 * weight.x;
+	// vec4 c = c0 * (1.0f - weight.y) + c1 * weight.y;
+	//
+	// return c;
+
 	return read_rgba(image_pos(pos, resolution), resolution, pixels, image_data_type, img);
+
 }
+
 
 inline NGP_HOST_DEVICE float read_depth(vec2 pos, const ivec2& resolution, const float* depth, uint32_t img = 0) {
 	auto read_val = [&](const ivec2& p) {

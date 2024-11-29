@@ -1412,8 +1412,14 @@ __global__ void init_rays_with_payload_kernel_nerf(
 	}
 
 	uint32_t ldoffset = y * resolution.x + x + sample_index;
-	vec2 pixel_offset = ld_random_pixel_offset(snap_to_pixel_centers ? 0 : ldoffset);
+	vec2 pixel_offset = tent_random_pixel_offset(snap_to_pixel_centers ? 0 : ldoffset);
+	vec2 a =  ld_random_val_2d(0, 0xdeadbeef);
+	printf("ld_random_val_2d: %f %f\n", a.x, a.y);
+
 	vec2 uv = vec2{(float)x + pixel_offset.x, (float)y + pixel_offset.y} / vec2(resolution);
+
+	// clamp uv since offset is now range from -1 to 2
+	// uv = clamp(uv, vec2(0.0f), vec2(1.0f));
 	mat4x3 camera = get_xform_given_rolling_shutter({camera_matrix0, camera_matrix1}, rolling_shutter, uv, ld_random_val(sample_index, idx * 72239731));
 
 	Ray ray = uv_to_ray(

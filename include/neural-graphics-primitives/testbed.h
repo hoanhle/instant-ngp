@@ -555,7 +555,7 @@ public:
 
 	// Rendering stuff
 	ivec2 m_window_res = ivec2(0);
-	bool m_dynamic_res = true;
+	bool m_dynamic_res = false; // dynamic resolution off by default
 	float m_dynamic_res_target_fps = 20.0f;
 	int m_fixed_res_factor = 8;
 	float m_scale = 1.0;
