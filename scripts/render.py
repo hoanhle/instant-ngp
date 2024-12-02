@@ -43,6 +43,7 @@ def parse_args():
     parser.add_argument("--height", "--screenshot_h", type=int, default=1080, help="Resolution height of the render video")
     parser.add_argument("--n_seconds", type=int, default=1, help="Number of steps to train for before quitting.")
     parser.add_argument("--fps", type=int, default=60, help="number of fps")
+    parser.add_argument("--spp", type=int, default=64, help="Number of samples per pixel. A larger number means less noise, but slower rendering.")
     parser.add_argument("--render_name", type=str, default="", help="name of the result video")
     parser.add_argument("--frames_dir", type=str, default="frames", help="name of the frames directory")
 
@@ -51,4 +52,4 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    render_video([args.width, args.height], args.n_seconds*args.fps, args.snapshot, args.camera_path, args.render_name, spp=8, fps=args.fps, frames_dir=args.frames_dir)
+    render_video([args.width, args.height], args.n_seconds*args.fps, args.snapshot, args.camera_path, args.render_name, spp=args.spp, fps=args.fps, frames_dir=args.frames_dir)
