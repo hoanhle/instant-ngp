@@ -326,18 +326,12 @@ inline __host__ __device__ vec2 ld_random_pixel_offset(const uint32_t spp) {
 }
 
 inline __host__ __device__ float tent_random_offset(float u) {
-	// Convert uniform random number to tent distribution in [-1, 2] range
-	// The tent peak is at 0.5, which gives us maximum density at the texel center
-
-	// First, determine which side of the tent we're on
 	if (u < 0.5f) {
-		// Left side of tent: [-1, 0.5]
-		// Map [0, 0.5] to [-1, 0.5] using sqrt for proper distribution
-		return -1.0f + 1.5f * sqrtf(2.0f * u);
+		// Left side of tent: [-0.5, 0.5]
+		return -0.5f + sqrtf(2.0f * u);
 	} else {
-		// Right side of tent: [0.5, 2]
-		// Map [0.5, 1] to [0.5, 2] using inverse sqrt for proper distribution
-		return 2.0f - 1.5f * sqrtf(2.0f * (1.0f - u));
+		// Right side of tent: [0.5, 1.5]
+		return 1.5f - sqrtf(2.0f * (1.0f - u));
 	}
 }
 
