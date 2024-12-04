@@ -1155,6 +1155,7 @@ void Testbed::imgui() {
 
 		accum_reset |= ImGui::Combo("Render mode", (int*)&m_render_mode, RenderModeStr);
 		accum_reset |= ImGui::Combo("Tonemap curve", (int*)&m_tonemap_curve, TonemapCurveStr);
+		accum_reset |= ImGui::Combo("Filter mode", (int*)&m_filter_mode, FilterModeStr);
 		accum_reset |= ImGui::ColorEdit4("Background", &m_background_color[0]);
 
 		if (ImGui::SliderFloat("Exposure", &m_exposure, -5.f, 5.f)) {

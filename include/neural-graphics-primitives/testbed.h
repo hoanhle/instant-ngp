@@ -173,7 +173,8 @@ public:
 			uint32_t max_mip,
 			float cone_angle_constant,
 			ERenderMode render_mode,
-			cudaStream_t stream
+			cudaStream_t stream,
+			EFilterMode filter_mode
 		);
 
 		uint32_t trace(
@@ -586,6 +587,7 @@ public:
 
 	ERenderMode m_render_mode = ERenderMode::Shade;
 	EMeshRenderMode m_mesh_render_mode = EMeshRenderMode::VertexNormals;
+	EFilterMode m_filter_mode = EFilterMode::Tent;
 
 	uint32_t m_seed = 1337;
 

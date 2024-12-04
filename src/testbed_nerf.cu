@@ -1396,7 +1396,8 @@ __global__ void init_rays_with_payload_kernel_nerf(
 	float* __restrict__ depth_buffer,
 	Buffer2DView<const uint8_t> hidden_area_mask,
 	Buffer2DView<const vec2> distortion,
-	ERenderMode render_mode
+	ERenderMode render_mode,
+	EFilterMode filter_mode
 ) {
 	uint32_t x = threadIdx.x + blockDim.x * blockIdx.x;
 	uint32_t y = threadIdx.y + blockDim.y * blockIdx.y;
@@ -1412,11 +1413,17 @@ __global__ void init_rays_with_payload_kernel_nerf(
 	}
 
 	uint32_t ldoffset = y * resolution.x + x + sample_index;
-	vec2 pixel_offset = tent_random_pixel_offset(snap_to_pixel_centers ? 0 : ldoffset);
-	vec2 a =  ld_random_val_2d(0, 0xdeadbeef);
-	printf("ld_random_val_2d: %f %f\n", a.x, a.y);
 
-	vec2 uv = vec2{(float)x + pixel_offset.x, (float)y + pixel_offset.y} / vec2(resolution);
+	vec2 pixel_offset;
+	vec2 uv;
+
+	if (filter_mode == EFilterMode::Box) {
+		pixel_offset = ld_random_pixel_offset(snap_to_pixel_centers ? 0 : ldoffset);
+	} else if (filter_mode == EFilterMode::Tent)  {
+		pixel_offset = tent_random_pixel_offset(snap_to_pixel_centers ? 0 : ldoffset);
+	}
+
+	uv = vec2{(float)x + pixel_offset.x, (float)y + pixel_offset.y} / vec2(resolution);
 
 	// clamp uv since offset is now range from -1 to 2
 	// uv = clamp(uv, vec2(0.0f), vec2(1.0f));
@@ -1589,7 +1596,8 @@ void Testbed::NerfTracer::init_rays_from_camera(
 	uint32_t max_mip,
 	float cone_angle_constant,
 	ERenderMode render_mode,
-	cudaStream_t stream
+	cudaStream_t stream,
+	EFilterMode filter_mode
 ) {
 	// Make sure we have enough memory reserved to render at the requested resolution
 	size_t n_pixels = (size_t)resolution.x * resolution.y;
@@ -1620,7 +1628,8 @@ void Testbed::NerfTracer::init_rays_from_camera(
 		depth_buffer,
 		hidden_area_mask,
 		distortion,
-		render_mode
+		render_mode,
+		filter_mode
 	);
 
 	m_n_rays_initialized = resolution.x * resolution.y;
@@ -1896,7 +1905,8 @@ void Testbed::render_nerf(
 		m_nerf.max_cascade,
 		m_nerf.cone_angle_constant,
 		render_mode,
-		stream
+		stream,
+		m_filter_mode
 	);
 
 	float depth_scale = 1.0f / m_nerf.training.dataset.scale;

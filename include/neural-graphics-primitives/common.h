@@ -67,6 +67,12 @@ enum class ERenderMode : int {
 };
 static constexpr const char* RenderModeStr = "AO\0Shade\0Normals\0Positions\0Depth\0Distortion\0Cost\0Slice\0\0";
 
+enum class EFilterMode : int {
+		Box,
+		Tent
+	};
+static constexpr const char* FilterModeStr = "Box\0Tent\0\0";
+
 enum class ERandomMode : int {
 	Random,
 	Halton,
