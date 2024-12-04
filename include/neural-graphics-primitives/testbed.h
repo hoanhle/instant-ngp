@@ -174,7 +174,8 @@ public:
 			float cone_angle_constant,
 			ERenderMode render_mode,
 			cudaStream_t stream,
-			EFilterMode filter_mode
+			EFilterMode filter_mode,
+			bool random_offset_per_pixel
 		);
 
 		uint32_t trace(
@@ -969,6 +970,7 @@ public:
 	bool m_edit_world_transform = true;
 
 	bool m_snap_to_pixel_centers = false;
+	bool m_random_offset_per_pixel = true;
 
 	vec3 m_parallax_shift = {0.0f, 0.0f, 0.0f}; // to shift the viewer's origin by some amount in camera space
 

@@ -1397,7 +1397,8 @@ __global__ void init_rays_with_payload_kernel_nerf(
 	Buffer2DView<const uint8_t> hidden_area_mask,
 	Buffer2DView<const vec2> distortion,
 	ERenderMode render_mode,
-	EFilterMode filter_mode
+	EFilterMode filter_mode,
+	bool random_offset_per_pixel
 ) {
 	uint32_t x = threadIdx.x + blockDim.x * blockIdx.x;
 	uint32_t y = threadIdx.y + blockDim.y * blockIdx.y;
@@ -1412,7 +1413,7 @@ __global__ void init_rays_with_payload_kernel_nerf(
 		aperture_size = 0.0;
 	}
 
-	uint32_t ldoffset = y * resolution.x + x + sample_index;
+	uint32_t ldoffset = random_offset_per_pixel ? (y * resolution.x + x + sample_index) : sample_index;
 
 	vec2 pixel_offset;
 	vec2 uv;
@@ -1597,7 +1598,8 @@ void Testbed::NerfTracer::init_rays_from_camera(
 	float cone_angle_constant,
 	ERenderMode render_mode,
 	cudaStream_t stream,
-	EFilterMode filter_mode
+	EFilterMode filter_mode,
+	bool random_offset_per_pixel
 ) {
 	// Make sure we have enough memory reserved to render at the requested resolution
 	size_t n_pixels = (size_t)resolution.x * resolution.y;
@@ -1629,7 +1631,8 @@ void Testbed::NerfTracer::init_rays_from_camera(
 		hidden_area_mask,
 		distortion,
 		render_mode,
-		filter_mode
+		filter_mode,
+		random_offset_per_pixel
 	);
 
 	m_n_rays_initialized = resolution.x * resolution.y;
@@ -1906,7 +1909,8 @@ void Testbed::render_nerf(
 		m_nerf.cone_angle_constant,
 		render_mode,
 		stream,
-		m_filter_mode
+		m_filter_mode,
+		m_random_offset_per_pixel
 	);
 
 	float depth_scale = 1.0f / m_nerf.training.dataset.scale;

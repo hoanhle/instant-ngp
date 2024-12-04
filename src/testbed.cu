@@ -1269,6 +1269,8 @@ void Testbed::imgui() {
 			accum_reset |= ImGui::Checkbox("Render transparency as checkerboard", &m_render_transparency_as_checkerboard);
 			accum_reset |= ImGui::Combo("Color space", (int*)&m_color_space, ColorSpaceStr);
 			accum_reset |= ImGui::Checkbox("Snap to pixel centers", &m_snap_to_pixel_centers);
+			accum_reset |= ImGui::Checkbox("Random offset per pixel", &m_random_offset_per_pixel);
+
 
 			ImGui::TreePop();
 		}
