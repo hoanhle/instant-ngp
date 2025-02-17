@@ -8,8 +8,7 @@ SUBMIT_IGNORES = [
     'out', '.git', '__pycache__',
     '*.ini', '*.jpg', '*.png', '*.mp4', '*.pkl',
     '*.gif', '*.whl', '*.pth', '*.pxd', '*.pyx',
-    '*.sif', '*.pt', '*.ipynb',
-    "*cmake*", "*data*", "*dependencies*", "*docs*",
+    '*.sif', '*.pt', '*.ipynb', "*data*", "*dependencies*", "*docs*",
     "*frames*", "*include*", "*notebooks*", "*src*"
 ]
 
@@ -33,7 +32,7 @@ NUM_GPUS = 1
 
 # Configure submit.
 submit_config = EasyDict()
-submit_config.run_func     = 'scripts.aalto_submit_wrapper.run_rendering'
+submit_config.run_func     = 'aalto_submit_wrapper.run_rendering'
 submit_config.time = '0-00:20:00'  # In format d-hh:mm:ss.
 submit_config.env          = ENV
 submit_config.num_nodes    = 1  # Number of nodes for training (each has 8 GPUs).
@@ -59,6 +58,7 @@ args.frames_dir = RUN_DIRS[ENV] + "/frames"
 
 # Create submission object.
 submit_config.task_description = 'description_of_task'
+submit_config.modules      = ['instantngp']
 submission = AaltoSubmission(args, **submit_config)
 
 

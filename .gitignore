@@ -22,3 +22,7 @@ __pycache__
 imgui.ini
 cmake-build-debug
 .idea
+videos/
+frames/
+frames_1/
+cmake-build-release
