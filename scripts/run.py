@@ -21,7 +21,8 @@ from common import *
 from scenes import *
 
 from tqdm import tqdm
-
+pyngp_path = '/home/leh19/workspace/instant-ngp/cmake-build-debug'
+sys.path.append(pyngp_path)
 import pyngp as ngp # noqa
 
 def parse_args():
@@ -168,7 +169,7 @@ if __name__ == "__main__":
 		testbed.nerf.cone_angle_constant = 0
 
 		# Match nerf paper behaviour and train on a fixed bg.
-		testbed.nerf.training.random_bg_color = False
+		testbed.nerf.training.random_bg_color = True
 
 	old_training_step = 0
 	n_steps = args.n_steps
@@ -222,11 +223,11 @@ if __name__ == "__main__":
 		maxpsnr = 0
 
 		# Evaluate metrics on black background
-		testbed.background_color = [0.0, 0.0, 0.0, 1.0]
+		testbed.background_color = [1.0, 1.0, 1.0, 1.0]
 
 		# Prior nerf papers don't typically do multi-sample anti aliasing.
 		# So snap all pixels to the pixel centers.
-		testbed.snap_to_pixel_centers = True
+		testbed.snap_to_pixel_centers = False
 		spp = 8
 
 		testbed.nerf.render_min_transmittance = 1e-4
@@ -263,14 +264,23 @@ if __name__ == "__main__":
 				psnr = mse2psnr(mse)
 				totpsnr += psnr
 				minpsnr = psnr if psnr<minpsnr else minpsnr
-				maxpsnr = psnr if psnr>maxpsnr else maxpsnr
+				maxpsnr = psnr if psnr>maxpsnr else maxpsnr	
 				totcount = totcount+1
 				t.set_postfix(psnr = totpsnr/(totcount or 1))
 
 		psnr_avgmse = mse2psnr(totmse/(totcount or 1))
 		psnr = totpsnr/(totcount or 1)
 		ssim = totssim/(totcount or 1)
-		print(f"PSNR={psnr} [min={minpsnr} max={maxpsnr}] SSIM={ssim}")
+		log_entry = f"PSNR={psnr} [min={minpsnr} max={maxpsnr}] SSIM={ssim}"
+
+		# Print to terminal
+		print(log_entry)
+
+		log_file_path = os.path.join(args.output_dir, "log.txt")
+		# Append to the log file
+		with open(log_file_path, "w") as log_file:
+			log_file.write(log_entry + "\n")
+
 
 	if args.save_mesh:
 		res = args.marching_cubes_res or 256

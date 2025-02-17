@@ -372,10 +372,10 @@ if __name__ == "__main__":
 				m = np.concatenate([np.concatenate([R, t], 1), bottom], 0)
 				c2w = np.linalg.inv(m)
 				if not args.keep_colmap_coords:
-					c2w[0:3,2] *= -1 # flip the y and z axis
+					c2w[0:3,2] *= -1
 					c2w[0:3,1] *= -1
 					c2w = c2w[[1,0,2,3],:]
-					c2w[2,:] *= -1 # flip whole world upside down
+					c2w[2,:] *= -1
 
 					up += c2w[0:3,1]
 
@@ -466,7 +466,7 @@ if __name__ == "__main__":
 		f.write("# Format: point_id X Y Z R G B error\n")
 
 		# Iterate over the transformed points and save each one
-		for point_id, (transformed_point, color, error) in transformed_points.items():
+		for point_id, (transformed_point, color, error) in flipped_points.items():
 			# Extract the transformed XYZ coordinates
 			x, y, z = transformed_point
 

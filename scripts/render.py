@@ -3,7 +3,7 @@ import argparse
 from tqdm import tqdm
 
 import scripts.common as common
-pyngp_path = '/home/leh19/workspace/instant-ngp/cmake-build-debug'
+pyngp_path = '../instant-ngp/cmake-build-debug'
 sys.path.append(pyngp_path)
 import pyngp as ngp # noqa
 import numpy as np
