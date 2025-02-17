@@ -12,14 +12,28 @@ logging.basicConfig(
     ]
 )
 
-def run_experiment(script, painting_dir, n_steps, transform_file_name="transforms"):
+# Hardcoded configs with corresponding output directories
+CONFIGS = {
+    "configs/nerf/reduced_9levels.json": "output_reduced_decrease_step_size_9levels",
+    "configs/nerf/reduced_9levels_big.json": "output_reduced_decrease_step_size_9levels_big",
+    "configs/nerf/reduced_9levels_big_3layer.json": "output_reduced_decrease_step_size_9levels_big_3layer",
+    "configs/nerf/reduced_9levels_big_8latent.json": "output_reduced_decrease_step_size_9levels_big_8latent",
+    "configs/nerf/reduced_9levels_big_8latent_3layers.json": "output_reduced_decrease_step_size_9levels_big_8latent_3layer"
+}
+
+def check_configs_exist():
+    """Ensure all config files exist."""
+    for config in CONFIGS:
+        if not Path(config).exists():
+            raise FileNotFoundError(f"Config file '{config}' does not exist.")
+
+def run_experiment(script, painting_dir, n_steps, transform_file_name="transforms", config=None, output_base=None):
     painting_dir = Path(painting_dir)
     input_dir = painting_dir / transform_file_name / 'leave_one_out'
 
     # Ensure the leave_one_out directory exists
     if not input_dir.exists():
         message = f"Skipping {painting_dir}, leave_one_out directory does not exist."
-        print(message)
         logging.info(message)
         return
 
@@ -33,70 +47,57 @@ def run_experiment(script, painting_dir, n_steps, transform_file_name="transform
         logging.error(error_message)
         raise ValueError(error_message)
 
-    # Define the run modes with the new output directory names
-    run_modes = ['default', 'reduced_decrease_step_size']
-
     # Iterate over each train-test pair and run the command
     for train_file, test_file in zip(train_files, test_files):
-        for mode in run_modes:
-            # Determine the output directory based on the mode
-            if mode == 'reduced_decrease_step_size':
-                output_base = 'output_reduced_decrease_step_size'
-            else:
-                output_base = 'output_decrease_step_size'
+        output_dir = painting_dir / transform_file_name / output_base / f'{train_file.stem}_vs_{test_file.stem}'
 
-            output_dir = painting_dir / transform_file_name / output_base / f'{train_file.stem}_vs_{test_file.stem}'
+        # Skip if the output directory exists and is not empty
+        if output_dir.exists() and any(output_dir.iterdir()):
+            message = f"Output exists for {output_dir}, skipping..."
+            logging.info(message)
+            continue
 
-            # Check if output directory exists and is not empty
-            if output_dir.exists() and any(output_dir.iterdir()):
-                message = f"Output exists for {output_dir}, skipping..."
-                print(message)
-                logging.info(message)
-                continue  # Skip this experiment
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-            output_dir.mkdir(parents=True, exist_ok=True)
+        # Set up a unique log file for this experiment
+        log_file_path = output_dir / 'experiment.log'
 
-            # Set up a unique log file for this experiment
-            log_file_path = output_dir / 'experiment.log'
+        # Create a FileHandler for this log file
+        file_handler = logging.FileHandler(log_file_path, mode='w')
+        file_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
 
-            # Create a FileHandler for this log file
-            file_handler = logging.FileHandler(log_file_path, mode='w')
-            file_handler.setLevel(logging.INFO)
-            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-            file_handler.setFormatter(formatter)
+        # Add the FileHandler to the logger
+        logger = logging.getLogger()
+        logger.addHandler(file_handler)
 
-            # Add the FileHandler to the logger
-            logger = logging.getLogger()
-            logger.addHandler(file_handler)
+        try:
+            # Construct the command to run
+            command = [
+                "python3", script,
+                "--scene", str(train_file),
+                "--test_transforms", str(test_file),
+                "--n_steps", str(n_steps),
+                "--output_dir", str(output_dir),
+                "--save_snapshot", str(output_dir / 'model.ingp')
+            ]
 
-            try:
-                # Construct the command to run
-                command = [
-                    "python3", script,
-                    "--scene", str(train_file),
-                    "--test_transforms", str(test_file),
-                    "--n_steps", str(n_steps),
-                    "--output_dir", str(output_dir),
-                    "--save_snapshot", str(output_dir / 'model.ingp')
-                ]
+            # If a config is provided, add it to the command
+            if config:
+                command.insert(2, str(config))
 
-                # Add reduced.json if running in 'with_reduced' mode
-                if mode == 'reduced_decrease_step_size':
-                    command.insert(2, 'configs/nerf/reduced.json')
+            # Log and run the command
+            command_message = f"Running command for {painting_dir} with config '{output_base}': {' '.join(command)}"
+            logging.info(command_message)
 
-                # Log and print the command being run
-                command_message = f"Running command for {painting_dir} in mode '{mode}': {' '.join(command)}"
-                print(command_message)
-                logging.info(command_message)
-
-                # Run the command and capture the output without including progress bars
-                result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                logging.info(result.stdout)
-                logging.error(result.stderr)
-            finally:
-                # Remove the FileHandler after the experiment
-                logger.removeHandler(file_handler)
-                file_handler.close()
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            logging.info(result.stdout)
+            logging.error(result.stderr)
+        finally:
+            # Remove the FileHandler after the experiment
+            logger.removeHandler(file_handler)
+            file_handler.close()
 
 def process_paintings(script, base_dir, n_steps):
     base_dir = Path(base_dir)
@@ -104,11 +105,11 @@ def process_paintings(script, base_dir, n_steps):
     # Iterate over each painting directory (e.g., painting_1, painting_2, etc.)
     for painting_dir in sorted(base_dir.glob('painting_*')):
         if painting_dir.is_dir():  # Ensure it's a directory
-            message = f"Processing painting: {painting_dir}"
-            print(message)
-            logging.info(message)
-            # run_experiment(script, painting_dir, n_steps, "transforms")
-            run_experiment(script, painting_dir, n_steps, "transforms_tight")
+            logging.info(f"Processing painting: {painting_dir}")
+
+            # Run experiments for each hardcoded config
+            for config, output_base in CONFIGS.items():
+                run_experiment(script, painting_dir, n_steps, "transforms_tight", Path(config), output_base)
 
 def main():
     parser = argparse.ArgumentParser(description="Run experiments with train and test JSONs for all paintings.")
@@ -118,7 +119,10 @@ def main():
 
     args = parser.parse_args()
 
-    # Process all painting directories
+    # Check if the hardcoded configs exist
+    check_configs_exist()
+
+    # Process all painting directories with the provided configs
     process_paintings(args.script, args.base_dir, args.n_steps)
 
 if __name__ == "__main__":

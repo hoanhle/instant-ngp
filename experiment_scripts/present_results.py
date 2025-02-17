@@ -9,7 +9,7 @@ BASE_DIR = "/home/leh19/workspace/simple-image-comparison/results"
 WEB_SERVER_ROOT = "/home/leh19/workspace/simple-image-comparison/"
 
 # The output JS file to save the data
-OUTPUT_JS_FILE = "data.js"
+OUTPUT_JS_FILE = "/home/leh19/workspace/simple-image-comparison/data.js"
 
 data = {
     "imageBoxes": []
@@ -23,6 +23,11 @@ view_regex = re.compile(r'train_leave_(\d+)_vs_test_leave_\d+')
 def get_web_relative_path(file_path):
     return os.path.relpath(file_path, WEB_SERVER_ROOT).replace(os.sep, '/')
 
+# Helper function to extract numbers from directory names
+def extract_number(leave_dir):
+    match = re.search(r'\d+', leave_dir)
+    return int(match.group()) if match else 0
+
 # List all painting directories in the base directory
 for painting in sorted(os.listdir(BASE_DIR)):
     painting_path = os.path.join(BASE_DIR, painting)
@@ -33,12 +38,20 @@ for painting in sorted(os.listdir(BASE_DIR)):
         "title": painting.replace('_', ' ').title(),  # Format title
         "elements": []
     }
+    print(os.path.join(painting_path, 'transforms_tight', 'output_reduced_decrease_step_size_9levels_big'))
 
-    # Paths to transforms directories with method names
+    # Updated: Paths to transforms directories with method names, including new methods
     transforms_dirs = {
         'Vanilla Instant NGP': os.path.join(painting_path, 'transforms', 'output'),
-        'Vanilla Instant NGP + tight bounding box': os.path.join(painting_path, 'transforms_tight', 'output'),
-        'Vanilla Instant NGP + tight bounding box + reduced hash grid': os.path.join(painting_path, 'transforms_tight', 'output_reduced')
+        '+ Tight Bounding Box': os.path.join(painting_path, 'transforms_tight', 'output'),
+        '+ Tight Bounding Box + Decrease Step Size': os.path.join(painting_path, 'transforms_tight', 'output_decrease_step_size'),
+        '+ Tight Bounding Box + Reduced Hash Grid': os.path.join(painting_path, 'transforms_tight', 'output_reduced'),
+        '+ Tight Bounding Box + Reduced Hash Grid + Decrease Step Size': os.path.join(painting_path, 'transforms_tight', 'output_reduced_decrease_step_size'),
+        '+ Tight Bounding Box + Reduced Hash Grid + Decrease Step Size + 9 levels': os.path.join(painting_path, 'transforms_tight', 'output_reduced_decrease_step_size_9levels'),
+        '+ Tight Bounding Box + Reduced Hash Grid + Decrease Step Size + 9 levels + 2^22 hash map': os.path.join(painting_path, 'transforms_tight', 'output_reduced_decrease_step_size_9levels_big'),
+        '+ Tight Bounding Box + Reduced Hash Grid + Decrease Step Size + 9 levels + 2^22 hash map + 3 layers': os.path.join(painting_path, 'transforms_tight', 'output_reduced_decrease_step_size_9levels_big_3layer'),
+        '+ Tight Bounding Box + Reduced Hash Grid + Decrease Step Size + 9 levels + 2^22 hash map + 8 latent': os.path.join(painting_path, 'transforms_tight', 'output_reduced_decrease_step_size_9levels_big_8latent'),
+        '+ Tight Bounding Box + Reduced Hash Grid + Decrease Step Size + 9 levels + 2^22 hash map + 8 latent + 3 layers': os.path.join(painting_path, 'transforms_tight', 'output_reduced_decrease_step_size_9levels_big_8latent_3layer'),
     }
 
     # Collect all unique train_leave_* directories across all transforms
@@ -49,7 +62,7 @@ for painting in sorted(os.listdir(BASE_DIR)):
                 leave_dirs.add(leave_dir)
 
     # Process each train_leave_* directory
-    for leave_dir in sorted(leave_dirs):
+    for leave_dir in sorted(leave_dirs, key=extract_number):
         view_match = view_regex.search(leave_dir)
         if view_match:
             view_number = int(view_match.group(1)) + 1
@@ -61,15 +74,10 @@ for painting in sorted(os.listdir(BASE_DIR)):
             "elements": []
         }
 
-        # Add Ground truth from the 'transforms' directory (only once)
-        transforms_path = transforms_dirs['Vanilla Instant NGP']
-        leave_path_transforms = os.path.join(transforms_path, leave_dir)
-        ref_image = os.path.join(leave_path_transforms, 'ref.png')
-        if os.path.exists(ref_image):
-            view_data["elements"].append({
-                "image": get_web_relative_path(ref_image),
-                "title": "Ground truth"
-            })
+        # Add Ground truth from the 'Vanilla Instant NGP' directory (only once)
+        vanilla_ngp_path = transforms_dirs['Vanilla Instant NGP']
+        leave_path_vanilla = os.path.join(vanilla_ngp_path, leave_dir)
+        ref_image = os.path.join(leave_path_vanilla, 'ref.png')
 
         # Iterate over all methods to add their 'out.png' images
         for method_name, method_dir in transforms_dirs.items():
@@ -98,6 +106,14 @@ for painting in sorted(os.listdir(BASE_DIR)):
                     }
                 })
 
+        if os.path.exists(ref_image):
+            view_data["elements"].append({
+                "image": get_web_relative_path(ref_image),
+                "title": "Ground truth"
+            })
+
+
+
         # Only add the view data if it contains elements
         if view_data["elements"]:
             painting_data["elements"].append(view_data)
@@ -109,4 +125,4 @@ for painting in sorted(os.listdir(BASE_DIR)):
 with open(OUTPUT_JS_FILE, 'w') as f:
     f.write('var data =\n')
     json.dump(data, f, indent=2)
-    f.write
+    f.write(';')  # Properly terminate the JS statement

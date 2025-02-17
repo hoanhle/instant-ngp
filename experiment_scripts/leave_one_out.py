@@ -38,16 +38,16 @@ def leave_one_out_split(file_path, output_dir):
 
         print(f"Saved: {train_output_file} and {test_output_file}")
 
-def process_paintings(base_dir):
+def process_paintings(base_dir, transform_file_name='transforms.json'):
     base_dir = Path(base_dir)
 
     # Iterate over each painting directory (e.g., painting_1, painting_2, etc.)
-    for painting_dir in sorted(base_dir.glob('painting_*')):
+    for painting_dir in sorted(base_dir.glob('painting_1')):
         if painting_dir.is_dir():  # Ensure it's a directory
             print(f"Processing painting: {painting_dir}")
 
-            transforms_file = painting_dir / 'transforms.json'
-            output_dir = painting_dir / 'leave_one_out'
+            transforms_file = painting_dir / transform_file_name
+            output_dir = painting_dir / transform_file_name.replace(".json", "") / 'leave_one_out'
 
             # Check if transforms.json exists
             if transforms_file.exists():
@@ -63,9 +63,11 @@ def main():
     with log_file.open('w') as f:
         # Redirect standard output to the file
         sys.stdout = f
-        process_paintings(base_dir)
+        # process_paintings(base_dir, "transforms.json")
+        process_paintings(base_dir, "transforms_tight.json")
 
-    # Restore standard output back to the console
+
+# Restore standard output back to the console
     sys.stdout = sys.__stdout__
 
 if __name__ == "__main__":

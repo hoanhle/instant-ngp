@@ -2,13 +2,13 @@ import numpy as np
 import json
 import math
 
-PAINTING_DIR = '/home/leh19/test_run_1/JPG/painting_9'
+PAINTING_DIR = '/home/leh19/datasets/paintings/video/'
 
 
 # Define the rotation angles for X, Y, and Z axes
 rotation_angle_x = 0  # Degrees for X-axis rotation
 rotation_angle_y = 0 # Degrees for Y-axis rotation
-rotation_angle_z = 27 # Degrees for Z-axis rotation
+rotation_angle_z = 16.72 # Degrees for Z-axis rotation
 
 # Define the rotation matrix around the Z-axis
 def rotation_matrix_z(angle_degrees):
@@ -54,7 +54,7 @@ def apply_rotation_to_transform_matrices(data, rotation_matrix):
         frame['transform_matrix'] = rotated_matrix.tolist()  # Convert back to list for JSON compatibility
 
 # Load the data from the JSON file
-with open(f'{PAINTING_DIR}/transforms.json', 'r') as file:
+with open(f'{PAINTING_DIR}/transforms_modified.json', 'r') as file:
     data = json.load(file)
 
 # Create the combined rotation matrix
