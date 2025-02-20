@@ -1,4 +1,5 @@
 import os, sys, shutil
+from pathlib import Path
 import argparse
 from tqdm import tqdm
 
@@ -12,6 +13,12 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 def render_video(resolution, numframes, snapshot, camera_path, name, spp, fps, frames_dir="frames", exposure=0):
+    # Set frames_dir to be in the same directory as the snapshot with camera path name and resolution
+    snapshot_path = Path(snapshot)
+    camera_path_name = Path(camera_path).stem
+    frames_dir = snapshot_path.parent / f"frames_{camera_path_name}_{resolution[0]}_{resolution[1]}_{numframes}"
+    frames_dir.mkdir(exist_ok=True)  # Create frames directory if it doesn't exist
+    
     testbed = ngp.Testbed(ngp.TestbedMode.Nerf)
     testbed.load_snapshot(snapshot)
     testbed.load_camera_path(camera_path)
@@ -19,11 +26,8 @@ def render_video(resolution, numframes, snapshot, camera_path, name, spp, fps, f
     for i in tqdm(list(range(min(numframes, numframes+1))), unit="frames", desc=f"Rendering video"):
         # testbed.camera_smoothing = args.video_camera_smoothing
         frame = testbed.render(resolution[0], resolution[1], spp, True, float(i)/numframes, float(i + 1)/numframes, fps, shutter_fraction=0.5)
-
-        frame_filename = os.path.join(frames_dir, f"{i:04d}.png")
-
-        common.write_image(frame_filename, np.clip(frame * 2**exposure, 0.0, 1.0), quality=100)
-
+        frame_filename = frames_dir / f"{i:04d}.png"
+        common.write_image(str(frame_filename), np.clip(frame * 2**exposure, 0.0, 1.0), quality=100)
 
     """
     The -c:v option sets the codec for the video stream. libx264 is the codec for H.264 encoding, which provides efficient compression and is widely compatible.    
@@ -45,11 +49,10 @@ def parse_args():
     parser.add_argument("--fps", type=int, default=60, help="number of fps")
     parser.add_argument("--spp", type=int, default=64, help="Number of samples per pixel. A larger number means less noise, but slower rendering.")
     parser.add_argument("--render_name", type=str, default="", help="name of the result video")
-    parser.add_argument("--frames_dir", type=str, default="frames", help="name of the frames directory")
 
     args = parser.parse_args()
     return args
 
 if __name__ == "__main__":
     args = parse_args()
-    render_video([args.width, args.height], args.n_seconds*args.fps, args.snapshot, args.camera_path, args.render_name, spp=args.spp, fps=args.fps, frames_dir=args.frames_dir)
+    render_video([args.width, args.height], args.n_seconds*args.fps, args.snapshot, args.camera_path, args.render_name, spp=args.spp, fps=args.fps)
