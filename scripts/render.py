@@ -12,7 +12,7 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG)
 
-def render_video(resolution, numframes, snapshot, camera_path, name, spp, fps, frames_dir="frames", exposure=0):
+def render_video(resolution, numframes, snapshot, camera_path, spp, fps, exposure=0):
     # Set frames_dir to be in the same directory as the snapshot with camera path name and resolution
     snapshot_path = Path(snapshot)
     camera_path_name = Path(camera_path).stem
@@ -35,7 +35,7 @@ def render_video(resolution, numframes, snapshot, camera_path, name, spp, fps, f
     The -crf (Constant Rate Factor) option controls the quality of the video. 0 is lossless, meaning no quality loss during compression, though it generates larger file sizes.
     The -preset option controls the encoding speed vs. file size trade-off. veryslow provides the best compression (smallest file size) but takes the longest to encode. This setting affects how efficiently ffmpeg encodes the video without sacrificing quality.
     """
-    os.system(f"ffmpeg -y -framerate {fps} -i {frames_dir}/%04d.png -c:v libx264 -profile:v high444 -preset slow -crf 20 {name}.mp4")
+    os.system(f"ffmpeg -y -framerate {fps} -i {frames_dir}/%04d.png -c:v libx264 -pix_fmt yuv420p {frames_dir}.mp4")
 
 
 def parse_args():
@@ -48,11 +48,10 @@ def parse_args():
     parser.add_argument("--n_seconds", type=int, default=1, help="Number of steps to train for before quitting.")
     parser.add_argument("--fps", type=int, default=60, help="number of fps")
     parser.add_argument("--spp", type=int, default=64, help="Number of samples per pixel. A larger number means less noise, but slower rendering.")
-    parser.add_argument("--render_name", type=str, default="", help="name of the result video")
 
     args = parser.parse_args()
     return args
 
 if __name__ == "__main__":
     args = parse_args()
-    render_video([args.width, args.height], args.n_seconds*args.fps, args.snapshot, args.camera_path, args.render_name, spp=args.spp, fps=args.fps)
+    render_video([args.width, args.height], args.n_seconds*args.fps, args.snapshot, args.camera_path, spp=args.spp, fps=args.fps)
